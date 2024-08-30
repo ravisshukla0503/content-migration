@@ -25,63 +25,44 @@ export async function POST(req: NextRequest) {
           : formatTitleFromUrl(url);
         let splitUrlForSlug = url.split("/").filter(Boolean);
         const slug = splitUrlForSlug[splitUrlForSlug.length - 1];
-        if (onBasisOfCategory) {
-          if (category) {
-            const { content, date, author, image, imageAlt } =
-              await fetchPageData(
-                url,
-                contentClass,
-                InfoClass,
-                ImageClass,
-                baseUrl
-              );
-            return {
-              url,
-              title,
-              category,
-              content,
-              date,
-              author,
-              image,
-              imageAlt,
-              slug,
-            };
-          }
-        } else {
-          const { content, date, author, image, imageAlt } =
-            await fetchPageData(
-              url,
-              contentClass,
-              InfoClass,
-              ImageClass,
-              baseUrl
-            );
+
+        if (onBasisOfCategory && !category) {
           return {
             url,
             title,
             category,
-            content,
-            date,
-            author,
-            image,
-            imageAlt,
+            content: null,
+            date: null,
+            author: null,
+            image: null,
+            imageAlt: null,
             slug,
           };
         }
+
+        const { content, date, author, image, imageAlt } = await fetchPageData(
+          url,
+          contentClass,
+          InfoClass,
+          ImageClass,
+          baseUrl
+        );
         return {
           url,
           title,
           category,
-          content: null,
-          date: null,
-          author: null,
-          image: null,
-          imageAlt: null,
+          content,
+          date,
+          author,
+          image,
+          imageAlt,
           slug,
         };
       })
     );
-    return NextResponse.json(blogPosts);
+    return NextResponse.json(
+      JSON.parse(JSON.stringify(blogPosts, htmlAttributeReplacer))
+    );
   } catch (error) {
     return NextResponse.json(
       { error: (error as Error).message },
@@ -89,6 +70,26 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+const encodeHtmlAttributes = (str: string) => {
+  return str
+    .replace(/&quot;/g, '"')
+    .replace(/"/g, "")
+    .replace(/'/g, "&#39;")
+    .replace(/\n/g, "");
+};
+
+const htmlAttributeReplacer = (key: any, value: string) => {
+  if (typeof value === "string") {
+    // Check if the string looks like it contains HTML attributes
+    if (value.includes("=") && (value.includes('"') || value.includes("'"))) {
+      return encodeHtmlAttributes(value);
+    }
+    value.replace(/\n/g, "");
+    // For non-HTML attribute strings, just replace quotes
+    return value.replace(/"/g, "");
+  }
+  return value;
+};
 
 async function fetchPageData(
   url: string,
@@ -109,11 +110,14 @@ async function fetchPageData(
 
       // Ensure the src is not already an absolute URL
       if (src && !src.startsWith("http") && !src.startsWith("https")) {
+        src = src.replace(/\\/g, "");
+        // console.log(src);
+
         // Prepend the base URL
         $(img).attr("src", baseUrl + src);
       }
     });
-    const content = contentInnerHtml.html();
+    let content = contentInnerHtml.html();
 
     // Extract date
     const dateElement = $(`.${InfoClass} div`)?.eq(0).text().trim();
