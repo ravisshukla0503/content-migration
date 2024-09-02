@@ -1,30 +1,3 @@
-// // app/api/fetchMySQLData/route.js
-// import mysql from "mysql2/promise";
-// import { NextRequest, NextResponse } from "next/server";
-
-// export async function POST(req: NextRequest) {
-//     console.log("Request received");
-//     const body = await req.json();
-//     const { host, user, password, database } = body;
-//     try {
-//         const connection = await mysql.createConnection({
-//             host: host,
-//             user: user,
-//             password: password,
-//             database: database,
-//         });
-//         console.log('MySQL connection established successfully');
-
-//         const [tables] = await connection.query("SHOW TABLES");
-//         console.log('Tables:', tables);
-
-//         await connection.end();
-//         return NextResponse.json({ tables });
-//     } catch (error: any) {
-//         console.error('Error connecting to MySQL:', error.message || error);
-//     }
-// }
-
 import mysql from "mysql2/promise";
 import { NextRequest, NextResponse } from "next/server";
 
