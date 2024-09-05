@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import StoreProvider from "./StoreProvider";
+import { persistor } from "@/lib/store";
+import { PersistGate } from "redux-persist/integration/react";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -14,9 +17,15 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  console.log("layout");
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+      <header className="bg-[#009790] text-white py-2 text-center rounded mb-6">
+        <h1 className="text-2xl font-bold">Content Migration Tool</h1>
+      </header>
+        <StoreProvider>{children}</StoreProvider>
+      </body>
     </html>
   );
 }

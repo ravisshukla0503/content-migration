@@ -206,7 +206,10 @@ export async function POST(req: NextRequest) {
         ImageClass,
         baseUrl
       );
-
+      let postType = type;
+      if(type === "blog") {
+        postType = "post"
+      }
       await upsertPost(
         pool,
         {
@@ -218,6 +221,7 @@ export async function POST(req: NextRequest) {
           image,
           imageAlt,
           publishedDate: date,
+          postType,
         },
         `${tableName}-posts`
       );
@@ -243,7 +247,7 @@ async function createTablesIfNotExists(
     CREATE TABLE IF NOT EXISTS \`${tableName}-category\` (
       id INT AUTO_INCREMENT PRIMARY KEY,
       categoryName VARCHAR(255) UNIQUE
-    );
+    );                        
   `;
   const createAuthorTableQuery = `
     CREATE TABLE IF NOT EXISTS \`${tableName}-author\` (
@@ -257,6 +261,7 @@ async function createTablesIfNotExists(
       category_id INT,
       author_id INT,
       title VARCHAR(255),
+      postType VARCHAR(255),  
       slug VARCHAR(255) UNIQUE,
       content TEXT,
       featureImg VARCHAR(255),
@@ -353,10 +358,11 @@ async function upsertPost(
 ) {
   const query = `
     INSERT INTO \`${postsTable}\`
-    (category_id, author_id, title, slug, content, featureImg, imageAlt, publishedDate)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    (category_id, author_id, title, postType, slug, content, featureImg, imageAlt, publishedDate)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE
       title = VALUES(title),
+      postType = VALUES(postType),
       content = VALUES(content),
       featureImg = VALUES(featureImg),
       imageAlt = VALUES(imageAlt),
@@ -367,6 +373,7 @@ async function upsertPost(
     data.categoryId,
     data.authorId,
     data.title,
+    data.postType,
     data.slug,
     data.content,
     data.image,
