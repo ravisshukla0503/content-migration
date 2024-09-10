@@ -5,135 +5,6 @@ import mysql, { ResultSetHeader, RowDataPacket } from "mysql2/promise";
 
 const BACKSLASH_REGEX = /\\/g;
 
-// export async function POST(req: NextRequest) {
-//   try {
-//     const body = await req.json();
-//     const {
-//       xml,
-//       type,
-//       onBasisOfCategory,
-//       contentClass,
-//       InfoClass,
-//       ImageClass,
-//       dbConfig, // Added for database configuration
-//       tableName,
-//     } = body;
-
-//     const parsedUrl = new URL(xml);
-//     console.log("parsedUrl", parsedUrl);
-//     const baseUrl = `${parsedUrl.protocol}//${parsedUrl.hostname}`;
-//     console.log("baseUrl", baseUrl);
-//     const urls = await extractUrlsFromSitemap(xml, type);
-//     console.log("urls", urls);
-//     console.log("body", body);
-//     // Create a connection to the MySQL database
-//     const pool = mysql.createPool(dbConfig);
-//     console.log("pool", pool);
-
-//     // Create the table if it doesn't exist
-//     await createTableIfNotExists(pool, tableName);
-
-//     // Process each URL and insert into the database immediately
-//     for (const url of urls) {
-//       const { category, isCategory } = extractCategoryFromUrl(url, type, onBasisOfCategory);
-//       const title = category
-//         ? await fetchTitleFromUrl(url)
-//         : formatTitleFromUrl(url);
-//       let splitUrlForSlug = url.split("/").filter(Boolean);
-//       const slug = splitUrlForSlug[splitUrlForSlug.length - 1];
-
-//       if (onBasisOfCategory && !category) {
-//         await upsertIntoDatabase(pool, {
-//           url,
-//           title,
-//           category: null,
-//           content: null,
-//           date: null,
-//           author: null,
-//           image: null,
-//           imageAlt: null,
-//           slug
-//         }, tableName);
-//       } else {
-//         const { content, date, author, image, imageAlt } = await fetchPageData(
-//           url,
-//           contentClass,
-//           InfoClass,
-//           ImageClass,
-//           baseUrl
-//         );
-//         await upsertIntoDatabase(pool, {
-//           url,
-//           title,
-//           category,
-//           content,
-//           date,
-//           author,
-//           image,
-//           imageAlt,
-//           slug
-//         }, tableName);
-//       }
-//     }
-
-//     await pool.end();
-//     return NextResponse.json({ message: "Data processed and inserted successfully" });
-
-//   } catch (error) {
-//     return NextResponse.json(
-//       { error: (error as Error).message },
-//       { status: 500 }
-//     );
-//   }
-// }
-
-// async function createTableIfNotExists(connection: mysql.Pool, tableName: string) {
-//   const createTableQuery = `
-//     CREATE TABLE IF NOT EXISTS \`${tableName}\` (
-//       id INT AUTO_INCREMENT PRIMARY KEY,
-//       url VARCHAR(255) UNIQUE,
-//       title VARCHAR(255),
-//       category VARCHAR(255),
-//       content TEXT,
-//       date DATETIME,
-//       author VARCHAR(255),
-//       image VARCHAR(255),
-//       imageAlt VARCHAR(255),
-//       slug VARCHAR(255)
-//     );
-//   `;
-//   await connection.execute(createTableQuery);
-// }
-
-// async function upsertIntoDatabase(connection: mysql.Pool, data: any, tableName: string) {
-//   // Use INSERT ... ON DUPLICATE KEY UPDATE to avoid duplicate entries
-//   const upsertQuery = `
-//     INSERT INTO ${tableName}
-//     (url, title, category, content, date, author, image, imageAlt, slug)
-//     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-//     ON DUPLICATE KEY UPDATE
-//       title = VALUES(title),
-//       category = VALUES(category),
-//       content = VALUES(content),
-//       date = VALUES(date),
-//       author = VALUES(author),
-//       image = VALUES(image),
-//       imageAlt = VALUES(imageAlt),
-//       slug = VALUES(slug);
-//   `;
-//   await connection.execute(upsertQuery, [
-//     data.url,
-//     data.title,
-//     data.category,
-//     data.content,
-//     data.date,
-//     data.author,
-//     data.image,
-//     data.imageAlt,
-//     data.slug
-//   ]);
-// }
-
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -214,7 +85,7 @@ export async function POST(req: NextRequest) {
         pool,
         {
           categoryId,
-          authorId,
+          authorName,
           title,
           slug,
           content,
@@ -259,7 +130,7 @@ async function createTablesIfNotExists(
     CREATE TABLE IF NOT EXISTS \`${tableName}-posts\` (
       id INT AUTO_INCREMENT PRIMARY KEY,
       category_id INT,
-      author_id INT,
+      author_name VARCHAR(255),
       title VARCHAR(255),
       postType VARCHAR(255),  
       slug VARCHAR(255) UNIQUE,
@@ -269,8 +140,7 @@ async function createTablesIfNotExists(
       publishedDate DATETIME,
       currentDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updatedDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-      FOREIGN KEY (category_id) REFERENCES \`${tableName}-category\`(id),
-      FOREIGN KEY (author_id) REFERENCES \`${tableName}-author\`(id)
+      FOREIGN KEY (category_id) REFERENCES \`${tableName}-category\`(id)
     );
   `;
 
@@ -299,21 +169,6 @@ async function upsertCategory(
   ]);
   return result.insertId;
 }
-
-// async function upsertAuthor(
-//   connection: mysql.Pool,
-//   authorName: string,
-//   authorTable: string
-// ): Promise<number> {
-//   const query = `
-//     INSERT INTO \`${authorTable}\` (authorName) VALUES (?)
-//     ON DUPLICATE KEY UPDATE authorName = VALUES(authorName);
-//   `;
-//   const [result] = await connection.execute<ResultSetHeader>(query, [
-//     authorName,
-//   ]);
-//   return result.insertId;
-// }
 
 async function upsertAuthor(
   connection: mysql.Pool,
@@ -358,10 +213,11 @@ async function upsertPost(
 ) {
   const query = `
     INSERT INTO \`${postsTable}\`
-    (category_id, author_id, title, postType, slug, content, featureImg, imageAlt, publishedDate)
+    (category_id, author_name, title, postType, slug, content, featureImg, imageAlt, publishedDate)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE
       title = VALUES(title),
+      author_name = VALUES(author_name),
       postType = VALUES(postType),
       content = VALUES(content),
       featureImg = VALUES(featureImg),
@@ -371,7 +227,7 @@ async function upsertPost(
   `;
   await connection.execute(query, [
     data.categoryId,
-    data.authorId,
+    data.authorName,
     data.title,
     data.postType,
     data.slug,

@@ -419,7 +419,7 @@ export default function Home() {
             ? "opacity-100"
             : "opacity-50 cursor-not-allowed"
         } mx-auto block`}
-        aria-disabled={!isGetWpTables}
+        aria-disabled={!isGetWpTables && !isCreatedMysqlTable}
         onClick={redirectToMapPage}
       >
         Map Wp Tables
