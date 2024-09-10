@@ -5,25 +5,23 @@ import { useState } from "react";
 
 export default function Map() {
   const postTables = [
-    "category_id",
     "author_id",
     "title",
     "postType",
     "slug",
     "content",
-    "featureImg",
-    "imageAlt",
     "publishedDate",
+    "updatedDate",
   ];
 
-  const [sorceTableFormData, setSorceTableFormData] = useState({
+  const [targetTableFormData, setTargetTableFormData] = useState({
     host: "",
     user: "",
     password: "",
     database: "",
   });
 
-  const [targetFormData, setTargetFormData] = useState({
+  const [sourceTableFormData, setSourceTableFormData] = useState({
     host: "",
     user: "",
     password: "",
@@ -31,18 +29,18 @@ export default function Map() {
     tableName: "",
   });
 
-  const isSourceTableFormValid = () =>
-    sorceTableFormData.host &&
-    sorceTableFormData.user &&
-    sorceTableFormData.password &&
-    sorceTableFormData.database;
-
   const isTargetTableFormValid = () =>
-    targetFormData.host &&
-    targetFormData.user &&
-    targetFormData.password &&
-    targetFormData.database &&
-    targetFormData.tableName;
+    targetTableFormData.host &&
+    targetTableFormData.user &&
+    targetTableFormData.password &&
+    targetTableFormData.database;
+
+  const isSourceTableFormValid = () =>
+    sourceTableFormData.host &&
+    sourceTableFormData.user &&
+    sourceTableFormData.password &&
+    sourceTableFormData.database &&
+    sourceTableFormData.tableName;
 
   let wpTables = useAppSelector((state) => state.wpTableState.tables);
   let wpPostTables = wpTables["wp_posts"];
@@ -65,10 +63,11 @@ export default function Map() {
     e.preventDefault();
     const requestBody = {
       Mapping: mapping,
-      SourceTable: sorceTableFormData,
-      TargetTable: targetFormData,
+      TargetTable: targetTableFormData,
+      SourceTable: sourceTableFormData,
     }
     try {
+      console.log(requestBody);
       const response = await fetch("http://localhost:3000/api/mssqlCreateConnection", {
         method: "POST",
         headers: {
@@ -136,7 +135,7 @@ export default function Map() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-16">
         <div className="bg-white p-4 shadow rounded">
-          <h2 className="text-lg font-semibold mb-2">Fetch WordPress Tables</h2>
+          <h2 className="text-lg font-semibold mb-2">Target Wordpress Table</h2>
           <form className="space-y-2">
             <div>
               <label className="block text-sm font-medium text-gray-700">
@@ -144,9 +143,9 @@ export default function Map() {
               </label>
               <input
                 type="text"
-                value={sorceTableFormData.host}
+                value={targetTableFormData.host}
                 onChange={(e) =>
-                  setSorceTableFormData({ ...sorceTableFormData, host: e.target.value })
+                  setTargetTableFormData({ ...targetTableFormData, host: e.target.value })
                 }
                 className="mt-1 block w-full p-1 border border-gray-300 rounded"
               />
@@ -157,9 +156,9 @@ export default function Map() {
               </label>
               <input
                 type="text"
-                value={sorceTableFormData.user}
+                value={targetTableFormData.user}
                 onChange={(e) =>
-                  setSorceTableFormData({ ...sorceTableFormData, user: e.target.value })
+                  setTargetTableFormData({ ...targetTableFormData, user: e.target.value })
                 }
                 className="mt-1 block w-full p-1 border border-gray-300 rounded"
               />
@@ -170,9 +169,9 @@ export default function Map() {
               </label>
               <input
                 type="password"
-                value={sorceTableFormData.password}
+                value={targetTableFormData.password}
                 onChange={(e) =>
-                  setSorceTableFormData({ ...sorceTableFormData, password: e.target.value })
+                  setTargetTableFormData({ ...targetTableFormData, password: e.target.value })
                 }
                 className="mt-1 block w-full p-1 border border-gray-300 rounded"
               />
@@ -183,9 +182,9 @@ export default function Map() {
               </label>
               <input
                 type="text"
-                value={sorceTableFormData.database}
+                value={targetTableFormData.database}
                 onChange={(e) =>
-                  setSorceTableFormData({ ...sorceTableFormData, database: e.target.value })
+                  setTargetTableFormData({ ...targetTableFormData, database: e.target.value })
                 }
                 className="mt-1 block w-full p-1 border border-gray-300 rounded"
               />
@@ -194,7 +193,7 @@ export default function Map() {
         </div>
 
         <div className="bg-white p-4 shadow rounded max-w-4xl mx-auto">
-          <h2 className="text-lg font-semibold mb-4">Create MySQL Table</h2>
+          <h2 className="text-lg font-semibold mb-4">Source Table</h2>
           <form className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex flex-col space-y-4">
@@ -204,10 +203,10 @@ export default function Map() {
                   </label>
                   <input
                     type="text"
-                    value={targetFormData.host}
+                    value={sourceTableFormData.host}
                     onChange={(e) =>
-                      setTargetFormData({
-                        ...targetFormData,
+                      setSourceTableFormData({
+                        ...sourceTableFormData,
                         host: e.target.value,
                       })
                     }
@@ -220,10 +219,10 @@ export default function Map() {
                   </label>
                   <input
                     type="text"
-                    value={targetFormData.user}
+                    value={sourceTableFormData.user}
                     onChange={(e) =>
-                      setTargetFormData({
-                        ...targetFormData,
+                      setSourceTableFormData({
+                        ...sourceTableFormData,
                         user: e.target.value,
                       })
                     }
@@ -236,10 +235,10 @@ export default function Map() {
                   </label>
                   <input
                     type="password"
-                    value={targetFormData.password}
+                    value={sourceTableFormData.password}
                     onChange={(e) =>
-                      setTargetFormData({
-                        ...targetFormData,
+                      setSourceTableFormData({
+                        ...sourceTableFormData,
                         password: e.target.value,
                       })
                     }
@@ -254,10 +253,10 @@ export default function Map() {
                   </label>
                   <input
                     type="text"
-                    value={targetFormData.database}
+                    value={sourceTableFormData.database}
                     onChange={(e) =>
-                      setTargetFormData({
-                        ...targetFormData,
+                      setSourceTableFormData({
+                        ...sourceTableFormData,
                         database: e.target.value,
                       })
                     }
@@ -270,10 +269,10 @@ export default function Map() {
                   </label>
                   <input
                     type="text"
-                    value={targetFormData.tableName}
+                    value={sourceTableFormData.tableName}
                     onChange={(e) =>
-                      setTargetFormData({
-                        ...targetFormData,
+                      setSourceTableFormData({
+                        ...sourceTableFormData,
                         tableName: e.target.value,
                       })
                     }
@@ -286,7 +285,7 @@ export default function Map() {
         </div>
       </div>
 
-      <button disabled={!checkAllfieldsFilled() && !isSourceTableFormValid() && !isTargetTableFormValid()}>Submit</button>
+      <button disabled={!checkAllfieldsFilled() && !isSourceTableFormValid() && !isTargetTableFormValid()} onClick={handleSubmit}>Submit</button>
     </>
   );
 }

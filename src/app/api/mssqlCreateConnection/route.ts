@@ -4,7 +4,7 @@ import mysql from 'mysql2/promise';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { SourceTable, TargetTable, mapping } = body;
+    const { SourceTable, TargetTable, Mapping } = body;
 
     // Create connection pools for both databases
     const db1Pool = mysql.createPool({
@@ -59,13 +59,13 @@ export async function POST(req: NextRequest) {
     const [posts] = await db1Pool.execute<mysql.RowDataPacket[]>(`SELECT * FROM \`${SourceTable.tableName}-posts\``);
 
     const postPromises = posts.map(async (post) => {
-      const postTitle = post.title;
-      const postContent = post.content;
-      const postType = post.postType;
+      const postTitle = post.title || '';
+      const postContent = post.content || '';
+      const postType = post.postType || 'post';
       const postName = post.slug;
-      const postModified = post.updatedDate;
-      const postDate = post.publishedDate;
-      const authorNameForPost = post.author_name;
+      const postModified = post.updatedDate || "1970-01-01 00:00:00";
+      const postDate = post.publishedDate || "1970-01-01 00:00:00";
+      const authorNameForPost = post.author_name || '';
       const postExcerpt = " ";
       const toPing = " ";
       const pinged = " ";
@@ -86,14 +86,14 @@ export async function POST(req: NextRequest) {
         // Post exists, update it
         const updatePostQuery = `
           UPDATE \`wp_posts\`
-          SET post_content = ?, post_title = ?, post_excerpt = ?, post_modified = ?, post_date = ?, to_ping = ?, pinged = ?, post_content_filtered = ?
+          SET  ${Mapping["content"]} = ?, ${Mapping["title"]} = ?, post_excerpt = ?, ${Mapping["updatedDate"]} = ?, ${Mapping["publishedDate"]} = ?, to_ping = ?, pinged = ?, post_content_filtered = ?
           WHERE post_name = ?;
         `;
         return db2Pool.execute(updatePostQuery, [postContent, postTitle, postExcerpt, postModified, postDate, toPing, pinged, postContentFiltered, postName]);
       } else {
         // Post does not exist, insert it
         const insertPostQuery = `
-          INSERT INTO \`wp_posts\` (post_author, post_content, post_excerpt, post_name, post_title, post_type, post_modified, post_date, to_ping, pinged, post_content_filtered)
+          INSERT INTO \`wp_posts\` (${Mapping["author_id"]}, ${Mapping["content"]}, post_excerpt, ${Mapping["slug"]}, ${Mapping["title"]}, ${Mapping["postType"]}, ${Mapping["updatedDate"]}, ${Mapping["publishedDate"]}, to_ping, pinged, post_content_filtered)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         `;
         return db2Pool.execute(insertPostQuery, [postAuthor, postContent, postExcerpt, postName, postTitle, postType, postModified, postDate, toPing, pinged, postContentFiltered]);
@@ -110,6 +110,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error) {
+    console.error('Error transferring data:', error);
     return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }

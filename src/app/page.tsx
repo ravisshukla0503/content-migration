@@ -317,7 +317,7 @@ export default function Home() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Table Name
+                    Table Prefix
                   </label>
                   <input
                     type="text"
